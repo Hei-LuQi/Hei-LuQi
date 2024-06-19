@@ -1,0 +1,16 @@
+import comp from "D:/workspace/my-blog/docs/.vuepress/.temp/pages/config/frontmatter/basic/index.html.vue"
+const data = JSON.parse("{\"path\":\"/config/frontmatter/basic/\",\"title\":\"通用配置\",\"lang\":\"zh-CN\",\"frontmatter\":{\"title\":\"通用配置\",\"author\":\"pengzhanbo\",\"createTime\":\"2024/03/02 20:01:09\",\"permalink\":\"/config/frontmatter/basic/\",\"gitInclude\":[],\"head\":[[\"script\",{\"id\":\"check-dark-mode\"},\";(function () {const um= localStorage.getItem('vuepress-theme-appearance') || 'auto';const sm = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;if (um === 'dark' || (um !== 'light' && sm)) {document.documentElement.classList.add('dark');}})();\"],[\"script\",{\"id\":\"check-mac-os\"},\"document.documentElement.classList.toggle('mac', /Mac|iPhone|iPod|iPad/i.test(navigator.platform))\"]]},\"headers\":[{\"level\":2,\"title\":\"概述\",\"slug\":\"概述\",\"link\":\"#概述\",\"children\":[]},{\"level\":2,\"title\":\"配置\",\"slug\":\"配置\",\"link\":\"#配置\",\"children\":[{\"level\":3,\"title\":\"pageLayout\",\"slug\":\"pagelayout\",\"link\":\"#pagelayout\",\"children\":[]},{\"level\":3,\"title\":\"pageClass\",\"slug\":\"pageclass\",\"link\":\"#pageclass\",\"children\":[]},{\"level\":3,\"title\":\"title\",\"slug\":\"title\",\"link\":\"#title\",\"children\":[]},{\"level\":3,\"title\":\"author\",\"slug\":\"author\",\"link\":\"#author\",\"children\":[]},{\"level\":3,\"title\":\"createTime\",\"slug\":\"createtime\",\"link\":\"#createtime\",\"children\":[]},{\"level\":3,\"title\":\"permalink\",\"slug\":\"permalink\",\"link\":\"#permalink\",\"children\":[]},{\"level\":3,\"title\":\"externalLinkIcon\",\"slug\":\"externallinkicon\",\"link\":\"#externallinkicon\",\"children\":[]},{\"level\":3,\"title\":\"backToTop\",\"slug\":\"backtotop\",\"link\":\"#backtotop\",\"children\":[]},{\"level\":3,\"title\":\"comments\",\"slug\":\"comments\",\"link\":\"#comments\",\"children\":[]},{\"level\":3,\"title\":\"aside\",\"slug\":\"aside\",\"link\":\"#aside\",\"children\":[]},{\"level\":3,\"title\":\"navbar\",\"slug\":\"navbar\",\"link\":\"#navbar\",\"children\":[]},{\"level\":3,\"title\":\"outline\",\"slug\":\"outline\",\"link\":\"#outline\",\"children\":[]},{\"level\":3,\"title\":\"prev\",\"slug\":\"prev\",\"link\":\"#prev\",\"children\":[]},{\"level\":3,\"title\":\"next\",\"slug\":\"next\",\"link\":\"#next\",\"children\":[]},{\"level\":3,\"title\":\"readingTime\",\"slug\":\"readingtime\",\"link\":\"#readingtime\",\"children\":[]},{\"level\":3,\"title\":\"lastUpdated\",\"slug\":\"lastupdated\",\"link\":\"#lastupdated\",\"children\":[]},{\"level\":3,\"title\":\"contributors\",\"slug\":\"contributors\",\"link\":\"#contributors\",\"children\":[]},{\"level\":3,\"title\":\"editLink\",\"slug\":\"editlink\",\"link\":\"#editlink\",\"children\":[]},{\"level\":3,\"title\":\"watermark\",\"slug\":\"watermark\",\"link\":\"#watermark\",\"children\":[]}]}],\"readingTime\":{\"minutes\":3.41,\"words\":1024},\"filePathRelative\":\"notes/theme/config/frontmatter/basic.md\"}")
+export { comp, data }
+
+if (import.meta.webpackHot) {
+  import.meta.webpackHot.accept()
+  if (__VUE_HMR_RUNTIME__.updatePageData) {
+    __VUE_HMR_RUNTIME__.updatePageData(data)
+  }
+}
+
+if (import.meta.hot) {
+  import.meta.hot.accept(({ data }) => {
+    __VUE_HMR_RUNTIME__.updatePageData(data)
+  })
+}
