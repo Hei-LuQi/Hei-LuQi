@@ -1,0 +1,6 @@
+build
+coverage
+.docusaurus
+.cache
+node_modules
+staticwebapp.config.json

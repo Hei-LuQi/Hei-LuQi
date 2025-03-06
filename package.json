@@ -1,0 +1,37 @@
+{
+  "name": "blog.johnnyreilly.com",
+  "version": "1.0.0",
+  "description": "This is the code for my blog, https://johnnyreilly.com. It's a Docusaurus app, and it's hosted on Azure Static Web Apps.",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd blog-website && npm start",
+    "build": "cd blog-website && npm run build",
+    "install:blog-website": "cd blog-website && npm install",
+    "install:blog-api": "cd blog-website/api && npm install",
+    "install:blog-website-tests": "cd blog-website-tests && npm install",
+    "install:pre-post-processing": "cd pre-post-processing && bun install",
+    "postinstall": "npm run install:blog-website && npm run install:blog-api && npm run install:blog-website-tests && npm run install:pre-post-processing",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write --ignore-unknown .",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johnnyreilly/blog.johnnyreilly.com.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/johnnyreilly/blog.johnnyreilly.com/issues"
+  },
+  "homepage": "https://github.com/johnnyreilly/blog.johnnyreilly.com#readme",
+  "devDependencies": {
+    "husky": "9.1.5",
+    "lint-staged": "15.2.9",
+    "prettier": "3.3.3"
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  }
+}

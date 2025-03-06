@@ -1,0 +1,430 @@
+name: Static Web App - Build and Deploy 🏗️
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write # Require write permission to Fetch an OIDC token.
+  contents: write
+  pull-requests: write
+
+env:
+  AZURE_RESOURCE_GROUP: rg-blog-johnnyreilly-com
+  AZURE_LOCATION: westeurope
+  STATIC_WEB_APP_NAME: blog.johnnyreilly.com
+  ROOT_CUSTOM_DOMAIN_NAME: johnnyreilly.com
+  BLOG_CUSTOM_DOMAIN_NAME: blog.johnnyreilly.com
+  TAGS_OWNER: johnnyreilly
+  TAGS_EMAIL: johnny_reilly@hotmail.com
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  build_and_deploy_swa_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Site build and deploy 🏗️
+    steps:
+      - name: Checkout 📥
+        uses: actions/checkout@v4
+        with:
+          # Number of commits to fetch. 0 indicates all history for all branches and tags.
+          fetch-depth: 0
+          submodules: true
+
+      - name: Install azd 🔧
+        uses: Azure/setup-azd@v2.0.0
+
+      - name: Set `azd` config options 🔧
+        run: |
+          azd config set auth.useAzCliAuth "true"
+          azd config set alpha.resourceGroupDeployments on
+
+      - name: AZ CLI login 🔑
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Bicep lint
+        if: github.event_name == 'pull_request'
+        uses: azure/CLI@v2
+        with:
+          azcliversion: 2.63.0 # pinning because https://github.com/Azure/cli/issues/165
+          inlineScript: |
+            az version
+            az bicep install
+            az bicep version
+            az bicep lint --file ./infra/main.bicep --diagnostics-format sarif > bicep.sarif
+            echo '::warning::Bicep linting results:'
+            cat bicep.sarif
+
+      - name: Upload Bicep lint results
+        if: github.event_name == 'pull_request' && (success() || failure())
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          category: bicep
+          sarif_file: bicep.sarif
+
+      - name: Set deployment name 📝
+        id: deployment_name
+        run: |
+          GIT_SHA='${{ github.sha }}'
+          SHORT_SHA=${GIT_SHA:0:7}
+          BRANCH_NAME='${{ env.BRANCH_NAME }}'
+
+          DEPLOYMENT_NAME="${BRANCH_NAME////-}.$SHORT_SHA"
+
+          echo "DEPLOYMENT_NAME=$DEPLOYMENT_NAME" >> $GITHUB_OUTPUT
+
+      - name: Infra - detect changes & validate 📝
+        id: static_web_app_what_if
+        if: github.event_name == 'pull_request'
+        uses: azure/CLI@v2
+        with:
+          azcliversion: 2.63.0 # pinning because https://github.com/Azure/cli/issues/165
+          inlineScript: |
+            az deployment group what-if \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --name "${{ steps.deployment_name.outputs.DEPLOYMENT_NAME }}" \
+              --template-file ./infra/main.bicep \
+              --parameters ./infra/main.bicepparam
+
+            az deployment group validate \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --name "${{ steps.deployment_name.outputs.DEPLOYMENT_NAME }}" \
+              --template-file ./infra/main.bicep \
+              --parameters ./infra/main.bicepparam
+        env:
+          # See https://learn.microsoft.com/en-gb/azure/developer/azure-developer-cli/configure-devops-pipeline?tabs=azdo
+          AZURE_LOCATION: ${{ env.AZURE_LOCATION }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_ENV_NAME: prod # we only have one environment for now
+          # https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/manage-environment-variables#user-provided-environment-variables
+          AZURE_RESOURCE_GROUP: ${{ env.AZURE_RESOURCE_GROUP }}
+
+          # Define the additional variables or secrets that are required only for provision - see main.bicepparam
+          REPOSITORY_BRANCH: main # we only provision for the main branch
+          STATIC_WEB_APP_NAME: ${{ env.STATIC_WEB_APP_NAME }}
+
+          TAGS_OWNER: ${{ env.TAGS_OWNER }}
+          TAGS_EMAIL: ${{ env.TAGS_EMAIL }}
+
+          ROOT_CUSTOM_DOMAIN_NAME: ${{ env.ROOT_CUSTOM_DOMAIN_NAME }}
+          BLOG_CUSTOM_DOMAIN_NAME: ${{ env.BLOG_CUSTOM_DOMAIN_NAME }}
+
+      # - name: Infra - deploy 🔧
+      #   id: static_web_app_deploy
+      #   if: github.event_name != 'pull_request'
+      #   uses: azure/CLI@v2
+      #   with:
+      #     inlineScript: |
+      #       az deployment group create \
+      #         --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+      #         --name "${{ steps.deployment_name.outputs.DEPLOYMENT_NAME }}" \
+      #         --template-file ./infra/main.bicep \
+      #         --parameters ./infra/main.bicepparam
+
+      - name: Infra - provision 🔧
+        if: github.event_name != 'pull_request'
+        run: azd provision --no-prompt
+        # run: azd provision --no-prompt --no-state # uncomment this to force a new deployment
+        env:
+          # See https://learn.microsoft.com/en-gb/azure/developer/azure-developer-cli/configure-devops-pipeline?tabs=azdo
+          AZURE_LOCATION: ${{ env.AZURE_LOCATION }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_ENV_NAME: prod # we only have one environment for now
+          # https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/manage-environment-variables#user-provided-environment-variables
+          AZURE_RESOURCE_GROUP: ${{ env.AZURE_RESOURCE_GROUP }}
+
+          # Define the additional variables or secrets that are required only for provision - see main.bicepparam
+          REPOSITORY_BRANCH: main # we only provision for the main branch
+          STATIC_WEB_APP_NAME: ${{ env.STATIC_WEB_APP_NAME }}
+
+          TAGS_OWNER: ${{ env.TAGS_OWNER }}
+          TAGS_EMAIL: ${{ env.TAGS_EMAIL }}
+
+          ROOT_CUSTOM_DOMAIN_NAME: ${{ env.ROOT_CUSTOM_DOMAIN_NAME }}
+          BLOG_CUSTOM_DOMAIN_NAME: ${{ env.BLOG_CUSTOM_DOMAIN_NAME }}
+
+      - name: Setup Node.js 🔧
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup bun 🔧
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install and build app 🔧
+        run: |
+          cd blog-website
+          npm ci
+          DOCUSAURUS_SSR_CONCURRENCY=5 IS_LIVE_SITE=${{ github.event_name != 'pull_request' }} npm run build
+          cp staticwebapp.config.json build/staticwebapp.config.json
+
+      - name: Install and build API 🔧
+        run: |
+          cd blog-website/api
+          npm ci
+          npm run build
+
+      - name: Get API key 🔑
+        id: static_web_app_apikey
+        uses: azure/CLI@v2
+        with:
+          azcliversion: 2.63.0 # pinning because https://github.com/Azure/cli/issues/165
+          inlineScript: |
+            # APIKEY=$(az staticwebapp secrets list --name '${{ env.STATIC_WEB_APP_NAME }}' | jq -r '.properties.apiKey')
+            APIKEY=$(az staticwebapp secrets list --name '${{ env.STATIC_WEB_APP_NAME }}' --query properties.apiKey -o tsv)
+            echo "APIKEY=$APIKEY" >> $GITHUB_OUTPUT
+
+      - name: Deploy site 🚀
+        id: static_web_app_build_and_deploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.static_web_app_apikey.outputs.APIKEY }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
+          action: 'upload'
+          skip_app_build: true
+          skip_api_build: true
+          app_location: '/blog-website/build' # App source code path
+          api_location: '/blog-website/api' # Api source code path
+
+  get_preview_url_job:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    name: Get preview URL 🔑
+    needs: build_and_deploy_swa_job
+    steps:
+      - name: AZ CLI login 🔑
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get preview URL 📝
+        id: static_web_app_preview_url
+        uses: azure/CLI@v2
+        with:
+          azcliversion: 2.63.0 # pinning because https://github.com/Azure/cli/issues/165
+          inlineScript: |
+            # DEFAULTHOSTNAME=$(az staticwebapp show -n '${{ env.STATIC_WEB_APP_NAME }}' | jq -r '.defaultHostname')
+            DEFAULTHOSTNAME=$(az staticwebapp show -n '${{ env.STATIC_WEB_APP_NAME }}' --query defaultHostname -o tsv)
+
+            PREVIEW_URL="https://${DEFAULTHOSTNAME/.[1-9]./-${{github.event.pull_request.number }}.${{ env.AZURE_LOCATION }}.1.}"
+
+            echo "PREVIEW_URL=$PREVIEW_URL" >> $GITHUB_OUTPUT
+
+    outputs:
+      preview-url: ${{steps.static_web_app_preview_url.outputs.PREVIEW_URL}}
+
+  integration_tests_job:
+    name: Integration tests 💡🏠
+    needs: get_preview_url_job
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for preview ${{ needs.get_preview_url_job.outputs.preview-url }} ⌚
+        id: static_web_app_wait_for_preview
+        uses: nev7n/wait_for_response@v1
+        with:
+          url: '${{ needs.get_preview_url_job.outputs.preview-url }}'
+          responseCode: 200
+          timeout: 600000
+          interval: 1000
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./blog-website-tests
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+        working-directory: ./blog-website-tests
+
+      - name: Run Playwright tests
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: '${{ needs.get_preview_url_job.outputs.preview-url }}'
+        run: npx playwright test
+        working-directory: ./blog-website-tests
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: blog-website-tests/playwright-report/
+          retention-days: 30
+
+  lighthouse_report_job:
+    name: Lighthouse report 💡🏠
+    needs: get_preview_url_job
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for preview ${{ needs.get_preview_url_job.outputs.preview-url }} ⌚
+        id: static_web_app_wait_for_preview
+        uses: nev7n/wait_for_response@v1
+        with:
+          url: '${{ needs.get_preview_url_job.outputs.preview-url }}'
+          responseCode: 200
+          timeout: 600000
+          interval: 1000
+
+      - name: Audit URLs 🧐
+        id: lighthouse_audit
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            ${{ needs.get_preview_url_job.outputs.preview-url }}
+            ${{ needs.get_preview_url_job.outputs.preview-url }}/about
+            ${{ needs.get_preview_url_job.outputs.preview-url }}/blog
+            ${{ needs.get_preview_url_job.outputs.preview-url }}/tags
+            ${{ needs.get_preview_url_job.outputs.preview-url }}/definitely-typed-the-movie
+          configPath: ./.github/workflows/lighthousesrc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          runs: 1
+
+      # - name: Dump steps.lighthouse_audit.outputs
+      #   id: github_context_step
+      #   run: echo '${{ toJSON(steps.lighthouse_audit.outputs) }}'
+
+      - name: Format lighthouse score
+        id: format_lighthouse_score
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const lighthouseCommentMaker = require('./.github/workflows/lighthouseCommentMaker.js');
+
+            const lighthouseOutputs = {
+              manifest: ${{ steps.lighthouse_audit.outputs.manifest }},
+              links: ${{ steps.lighthouse_audit.outputs.links }}
+            };
+
+            const comment = lighthouseCommentMaker({ lighthouseOutputs });
+            core.setOutput("comment", comment);
+
+      - name: Add Lighthouse stats as comment ✍️
+        id: comment_to_pr
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          number: ${{ github.event.pull_request.number }}
+          header: lighthouse
+          message: ${{ steps.format_lighthouse_score.outputs.comment }}
+
+  structured_data_report_job:
+    name: Structured data report 📝
+    needs: get_preview_url_job
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for preview ${{ needs.get_preview_url_job.outputs.preview-url }} ⌚
+        id: static_web_app_wait_for_preview
+        uses: nev7n/wait_for_response@v1
+        with:
+          url: '${{ needs.get_preview_url_job.outputs.preview-url }}'
+          responseCode: 200
+          timeout: 600000
+          interval: 1000
+
+      - name: Audit URLs for structured data 🧐
+        id: structured_data_audit
+        uses: johnnyreilly/schemar@v0.1.1
+        with:
+          urls: |
+            ${{ needs.get_preview_url_job.outputs.preview-url }}
+            ${{ needs.get_preview_url_job.outputs.preview-url }}/about
+            ${{ needs.get_preview_url_job.outputs.preview-url }}/blog
+            ${{ needs.get_preview_url_job.outputs.preview-url }}/definitely-typed-the-movie
+
+      # - name: Dump steps.structured_data_audit.outputs
+      #   run: echo '${{ toJSON(steps.structured_data_audit.outputs) }}'
+
+      - name: Format structured data results
+        id: format_structured_data_results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const structuredDataCommentMaker = (await import('${{ github.workspace }}/.github/workflows/structuredDataCommentMaker.mjs')).default;
+            const results = ${{ steps.structured_data_audit.outputs.results }};
+            core.setOutput("comment", structuredDataCommentMaker('${{ needs.build_and_deploy_swa_job.outputs.preview-url }}', results));
+
+      - name: Add structured data results as comment ✍️
+        id: structured_data_comment_to_pr
+        if: always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          number: ${{ github.event.pull_request.number }}
+          header: structured_data
+          message: ${{ steps.format_structured_data_results.outputs.comment }}
+
+  # deploy_to_devto_job:
+  #   name: Publish to dev.to 🗞️
+  #   needs: build_and_deploy_swa_job
+  #   if: github.event_name != 'pull_request'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+
+  #     - name: Setup Node.js 🔧
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18'
+  #         cache: 'yarn'
+
+  #     - name: Publish to dev.to 🗞️
+  #       run: |
+  #         cd from-docusaurus-to-devto
+  #         npm ci
+  #         DEVTO_APIKEY=${{ secrets.DEVTO_APIKEY }} yarn start
+
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Cleanup staging 💥
+    steps:
+      - name: AZ CLI login 🔑
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get API key 🔑
+        id: apikey
+        uses: azure/CLI@v2
+        with:
+          azcliversion: 2.63.0 # pinning because https://github.com/Azure/cli/issues/165
+          inlineScript: |
+            # APIKEY=$(az staticwebapp secrets list --name '${{ env.STATIC_WEB_APP_NAME }}' | jq -r '.properties.apiKey')
+            APIKEY=$(az staticwebapp secrets list --name '${{ env.STATIC_WEB_APP_NAME }}' --query properties.apiKey -o tsv)
+            echo "APIKEY=$APIKEY" >> $GITHUB_OUTPUT
+
+      - name: Destroy staging environment 💥
+        id: closepullrequest
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.apikey.outputs.APIKEY }}
+          action: 'close'
