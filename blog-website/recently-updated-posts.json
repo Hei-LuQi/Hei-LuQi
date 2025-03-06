@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "link": "standing-on-shoulders-of-giants",
+    "title": "Standing on the Shoulders of Giants..."
+  },
+  {
+    "link": "jqgrid-its-just-far-better-grid",
+    "title": "jqGrid - it's just a far better grid"
+  },
+  {
+    "link": "what-on-earth-is-jquery-and-why-should",
+    "title": "What on earth is jQuery?  And why should I care?"
+  }
+]
