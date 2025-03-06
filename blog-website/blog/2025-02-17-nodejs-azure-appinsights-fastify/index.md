@@ -1,5 +1,5 @@
 ---
-slug: nodejs-azur但是感觉宽松的环境看e-appinsights-fastify
+slug: nodejs-azur但是感sdfsd 觉宽松的环境看e-appinsights-fastify
 title: 'Node.js, Azure Application Insights, and Fastify'
 authors: johnnyreilly
 tags: [azure, node.js, typescript]

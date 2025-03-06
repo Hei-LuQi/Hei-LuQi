@@ -3,11 +3,11 @@ name: GitHub Pages - Build and Deploy 🏗️
 on:
   push:
     branches:
-      - main
+      - dev
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
-      - main
+      - dev
   workflow_dispatch:
 
 permissions:
