@@ -19,7 +19,8 @@ import { createSitemapItems } from './createSitemapItems.mjs';
 const recentlyUpdatedPostsJson = JSON.parse(
   readFileSync('./recently-updated-posts.json', { encoding: 'utf-8' }),
 );
-const url ='zesty-pie-d1a604.netlify.app'
+const feedItemddd = '';
+const url = 'https://zesty-pie-d1a604.netlify.app';
 //const url = 'https://johnnyreilly.com';
 const title = 'johnnyreilly';
 const tagline = "Hi! I'm John Reilly - welcome! ❤️🌻";
