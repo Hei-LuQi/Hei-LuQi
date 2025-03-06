@@ -10,10 +10,10 @@
         <language>en</language>
         <copyright>Copyright © 2012 - 2025 John Reilly.</copyright>
         <item>
-            <title><![CDATA[Node.js, Azure Application Insights, and Fastify]]></title>
+            <title><![CDATA[Node.js, Azure Application Insi但sdfsdfdfsdf是感sdfsd 觉宽松的环境ghts, and Fastify]]></title>
             <link>https://zesty-pie-d1a604.netlify.app/nodejs-azur但sdfsdfdfsdf是感sdfsd 觉宽松的环境看e-appinsights-fastify</link>
             <guid>https://zesty-pie-d1a604.netlify.app/nodejs-azur但sdfsdfdfsdf是感sdfsd 觉宽松的环境看e-appinsights-fastify</guid>
-            <pubDate>Thu, 06 Mar 2025 16:00:16 GMT</pubDate>
+            <pubDate>Thu, 06 Mar 2025 16:20:37 GMT</pubDate>
             <description><![CDATA[Learn how to set up a Node.js with Azure Application Insights and Fastify.]]></description>
             <content:encoded><![CDATA[<p>If you deploy a Node.js application to Azure, you might want to use Azure Application Insights to monitor it. This post shows you how to set up a Node.js application with Azure Application Insights. It also includes a Fastify plugin to automatically track requests. (Given the out of the box mechanism for tracking requests does not work with Fastify.)</p>
 <p><img decoding="async" loading="eager" alt="title image reading &amp;quot;Node.js, Azure Application Insights, and Fastify&amp;quot; with the relevant logos" src="https://zesty-pie-d1a604.netlify.app/assets/images/title-image-09b4aad04d867b07bb095e561694e59d.png" width="800" height="450" fetchpriority="high" class="img_ev3q"></p>
