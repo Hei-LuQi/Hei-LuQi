@@ -4,8 +4,8 @@
   <ShortName>johnnyreilly</ShortName>
   <Description>Search johnnyreilly</Description>
   <InputEncoding>UTF-8</InputEncoding>
-  <Image width="16" height="16" type="image/x-icon">https://johnnyreilly.com/favicon.ico</Image>
-  <Url type="text/html" method="get" template="https://johnnyreilly.com/search?q={searchTerms}"/>
-  <Url type="application/opensearchdescription+xml" rel="self" template="https://johnnyreilly.com/opensearch.xml" />
-  <moz:SearchForm>https://johnnyreilly.com/</moz:SearchForm>
+  <Image width="16" height="16" type="image/x-icon">https://zesty-pie-d1a604.netlify.app/favicon.ico</Image>
+  <Url type="text/html" method="get" template="https://zesty-pie-d1a604.netlify.app/search?q={searchTerms}"/>
+  <Url type="application/opensearchdescription+xml" rel="self" template="https://zesty-pie-d1a604.netlify.app/opensearch.xml" />
+  <moz:SearchForm>https://zesty-pie-d1a604.netlify.app/</moz:SearchForm>
 </OpenSearchDescription>
